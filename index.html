@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Ciclo">
+<title>Mi Ciclo · Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --warm-white: #faf8f3;
+    --sand: #e8dcc8;
+    --taupe: #c4b49a;
+    --mocha: #8b7355;
+    --earth: #5c4a32;
+    --deep: #2d2318;
+    --rose: #d4967a;
+    --blush: #e8c4b0;
+    --sage: #8fa68c;
+    --sage-light: #c4d4c2;
+    --moon: #b8b0c8;
+    --moon-light: #ddd8ee;
+    --sky: #8ab0c0;
+    --gold: #c8a84b;
+    --gold-light: #e8d8a0;
+    --coral: #d4806a;
+    --teal: #6a9ea8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--deep);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* HEADER */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--sand);
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .app-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--earth);
+    letter-spacing: 0.02em;
+  }
+
+  .app-title span {
+    font-style: italic;
+    color: var(--rose);
+  }
+
+  /* NAVIGATION TABS */
+  .nav-tabs {
+    display: flex;
+    background: var(--sand);
+    margin: 0;
+    padding: 4px;
+    gap: 2px;
+    position: sticky;
+    top: 61px;
+    z-index: 99;
+  }
+
+  .nav-tab {
+    flex: 1;
+    padding: 8px 4px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--mocha);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .nav-tab.active {
+    background: var(--warm-white);
+    color: var(--earth);
+    box-shadow: 0 1px 4px rgba(44,27,14,0.12);
+  }
+
+  /* MAIN CONTENT */
+  .view { display: none; padding: 20px; padding-bottom: 40px; }
+  .view.active { display: block; }
+
+  /* ===================== FORM VIEW ===================== */
+  .form-date-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: var(--warm-white);
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--sand);
+  }
+
+  .form-date-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--earth);
+  }
+
+  .form-date-input {
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--mocha);
+    cursor: pointer;
+  }
+
+  .form-section {
+    margin-bottom: 16px;
+    background: var(--warm-white);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--sand);
+  }
+
+  .form-section-header {
+    padding: 12px 16px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--sand);
+  }
+
+  .section-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .form-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--earth);
+    letter-spacing: 0.02em;
+  }
+
+  .form-section-body { padding: 12px 16px; }
+
+  .field-row {
+    margin-bottom: 12px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--mocha);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .field-input, .field-textarea, .field-select {
+    width: 100%;
+    border: 1px solid var(--sand);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--deep);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .field-input:focus, .field-textarea:focus, .field-select:focus {
+    border-color: var(--mocha);
+  }
+
+  .field-textarea {
+    resize: none;
+    min-height: 70px;
+    line-height: 1.5;
+  }
+
+  /* SLIDER */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .slider-track {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--sand);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .slider-track::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--mocha);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(44,27,14,0.25);
+  }
+
+  .slider-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--earth);
+    min-width: 24px;
+    text-align: center;
+  }
+
+  /* PILLS / CHIPS */
+  .pills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--sand);
+    background: var(--cream);
+    font-size: 12px;
+    color: var(--mocha);
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .pill.selected {
+    background: var(--earth);
+    border-color: var(--earth);
+    color: var(--cream);
+  }
+
+  /* SAVE BUTTON */
+  .btn-save {
+    width: 100%;
+    padding: 16px;
+    background: var(--earth);
+    color: var(--cream);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .btn-save:active { transform: scale(0.98); background: var(--deep); }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--earth);
+    color: var(--cream);
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 13px;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ===================== CHART VIEW ===================== */
+  .chart-controls {
+    background: var(--warm-white);
+    border-radius: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--sand);
+    margin-bottom: 16px;
+  }
+
+  .control-label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--taupe);
+    margin-bottom: 8px;
+  }
+
+  .period-pills {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .period-pill {
+    flex: 1;
+    padding: 6px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--sand);
+    background: var(--cream);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--mocha);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .period-pill.active {
+    background: var(--earth);
+    border-color: var(--earth);
+    color: var(--cream);
+  }
+
+  .series-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .series-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1.5px solid;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .series-toggle .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .series-toggle.off {
+    opacity: 0.35;
+  }
+
+  .chart-wrap {
+    background: var(--warm-white);
+    border-radius: 14px;
+    border: 1px solid var(--sand);
+    padding: 16px 8px 8px 4px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  canvas#mainChart {
+    width: 100% !important;
+  }
+
+  .chart-empty {
+    text-align: center;
+    padding: 40px 20px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--taupe);
+    font-style: italic;
+  }
+
+  /* ===================== TABLE VIEW ===================== */
+  .table-wrap {
+    background: var(--warm-white);
+    border-radius: 14px;
+    border: 1px solid var(--sand);
+    overflow: hidden;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    min-width: 500px;
+  }
+
+  th {
+    background: var(--earth);
+    color: var(--cream);
+    padding: 8px 6px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 7px 6px;
+    border-bottom: 1px solid var(--sand);
+    color: var(--deep);
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: rgba(232,220,200,0.25); }
+
+  .table-empty {
+    text-align: center;
+    padding: 40px 20px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--taupe);
+    font-style: italic;
+  }
+
+  /* DELETE ROW */
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--taupe);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .btn-del:active { color: var(--coral); }
+
+  /* ===================== SETTINGS VIEW ===================== */
+  .settings-section {
+    background: var(--warm-white);
+    border-radius: 14px;
+    border: 1px solid var(--sand);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .settings-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--earth);
+    margin-bottom: 12px;
+  }
+
+  .custom-field-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .custom-field-row input {
+    flex: 1;
+    border: 1px solid var(--sand);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: var(--cream);
+    outline: none;
+  }
+
+  .btn-sm {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--earth);
+    color: var(--cream);
+  }
+
+  .btn-sm.danger {
+    background: var(--coral);
+  }
+
+  .custom-fields-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .custom-field-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--cream);
+    border-radius: 8px;
+    border: 1px solid var(--sand);
+    font-size: 13px;
+  }
+
+  .export-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1.5px solid var(--earth);
+    background: transparent;
+    color: var(--earth);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+  }
+
+  .export-btn:active { background: var(--earth); color: var(--cream); }
+
+  .install-box {
+    background: linear-gradient(135deg, var(--moon-light), var(--blush));
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--earth);
+    border: 1px solid var(--moon);
+  }
+
+  .install-box strong {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  /* RESPONSIVE ADJUSTMENTS */
+  @media (max-width: 380px) {
+    .series-toggles { gap: 4px; }
+    .series-toggle { font-size: 10px; padding: 3px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">mi <span>ciclo</span> · tracker</div>
+  <div style="font-size:20px">🌙</div>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showView('form')">Registrar</button>
+  <button class="nav-tab" onclick="showView('chart')">Gráficas</button>
+  <button class="nav-tab" onclick="showView('table')">Tabla</button>
+  <button class="nav-tab" onclick="showView('settings')">Ajustes</button>
+</div>
+
+<!-- ============== FORM VIEW ============== -->
+<div class="view active" id="view-form">
+
+  <div class="form-date-bar">
+    <div class="form-date-label">📅 Fecha de hoy</div>
+    <input type="date" class="form-date-input" id="entryDate">
+  </div>
+
+  <!-- CICLO -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--rose)"></div>
+      <div class="form-section-title">Ciclo menstrual</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Día del ciclo (nº)</label>
+        <input type="number" class="field-input" id="f_cycleDayNum" min="1" max="45" placeholder="ej. 14">
+      </div>
+      <div class="field-row">
+        <label class="field-label">Fase del ciclo</label>
+        <div class="pills-row" id="f_cyclePhase">
+          <button class="pill" data-val="menstrual">🩸 Menstrual</button>
+          <button class="pill" data-val="folicula">🌱 Folicular</button>
+          <button class="pill" data-val="ovulacion">🌸 Ovulación</button>
+          <button class="pill" data-val="lutea">🍂 Lútea</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Flujo</label>
+        <div class="pills-row" id="f_flow">
+          <button class="pill" data-val="sin_flujo">Sin flujo</button>
+          <button class="pill" data-val="manchado">Manchado</button>
+          <button class="pill" data-val="ligero">Ligero</button>
+          <button class="pill" data-val="moderado">Moderado</button>
+          <button class="pill" data-val="abundante">Abundante</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LUNA -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--moon)"></div>
+      <div class="form-section-title">Fase lunar</div>
+    </div>
+    <div class="form-section-body">
+      <div class="pills-row" id="f_moonPhase">
+        <button class="pill" data-val="nueva">🌑 Nueva</button>
+        <button class="pill" data-val="creciente">🌒 Creciente</button>
+        <button class="pill" data-val="cuarto_creciente">🌓 C. creciente</button>
+        <button class="pill" data-val="gibosa_creciente">🌔 Gibosa +</button>
+        <button class="pill" data-val="llena">🌕 Llena</button>
+        <button class="pill" data-val="gibosa_menguante">🌖 Gibosa -</button>
+        <button class="pill" data-val="cuarto_menguante">🌗 C. menguante</button>
+        <button class="pill" data-val="menguante">🌘 Menguante</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENERGÍA Y SUEÑO -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--gold)"></div>
+      <div class="form-section-title">Energía y sueño</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Energía hoy (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_energy" min="1" max="10" value="5" oninput="updateSlider(this,'v_energy')">
+          <span class="slider-value" id="v_energy">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Calidad del sueño anoche (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_sleep" min="1" max="10" value="5" oninput="updateSlider(this,'v_sleep')">
+          <span class="slider-value" id="v_sleep">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Horas de sueño</label>
+        <input type="number" class="field-input" id="f_sleepHours" min="0" max="12" step="0.5" placeholder="ej. 7.5">
+      </div>
+      <div class="field-row">
+        <label class="field-label">Notas sobre el sueño</label>
+        <textarea class="field-textarea" id="f_sleepNotes" placeholder="Cómo dormí, si me desperté, sueños..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMOCIÓN -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--blush)"></div>
+      <div class="form-section-title">Estado emocional</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Bienestar emocional (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_emotion" min="1" max="10" value="5" oninput="updateSlider(this,'v_emotion')">
+          <span class="slider-value" id="v_emotion">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Emociones del día</label>
+        <div class="pills-row" id="f_emotionTags">
+          <button class="pill" data-val="alegre">😊 Alegre</button>
+          <button class="pill" data-val="tranquila">😌 Tranquila</button>
+          <button class="pill" data-val="ansiosa">😰 Ansiosa</button>
+          <button class="pill" data-val="irritable">😤 Irritable</button>
+          <button class="pill" data-val="triste">😢 Triste</button>
+          <button class="pill" data-val="motivada">🔥 Motivada</button>
+          <button class="pill" data-val="sensible">💧 Sensible</button>
+          <button class="pill" data-val="conectada">✨ Conectada</button>
+          <button class="pill" data-val="desconectada">🫥 Desconectada</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Notas emocionales</label>
+        <textarea class="field-textarea" id="f_emotionNotes" placeholder="Cómo estoy emocionalmente hoy..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUERPO -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--sage)"></div>
+      <div class="form-section-title">Cuerpo y síntomas</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Bienestar físico (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_body" min="1" max="10" value="5" oninput="updateSlider(this,'v_body')">
+          <span class="slider-value" id="v_body">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Síntomas físicos</label>
+        <div class="pills-row" id="f_symptoms">
+          <button class="pill" data-val="sin_sintomas">✅ Sin síntomas</button>
+          <button class="pill" data-val="dolor_cabeza">🤕 Cabeza</button>
+          <button class="pill" data-val="dolor_vientre">🌀 Vientre</button>
+          <button class="pill" data-val="tension_pechos">💢 Pechos</button>
+          <button class="pill" data-val="hinchazón">🫃 Hinchazón</button>
+          <button class="pill" data-val="fatiga">😴 Fatiga</button>
+          <button class="pill" data-val="nauseas">🤢 Náuseas</button>
+          <button class="pill" data-val="dolor_espalda">🔙 Espalda</button>
+          <button class="pill" data-val="manchas_piel">🔴 Manchas</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Estado de la piel (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_skin" min="1" max="10" value="5" oninput="updateSlider(this,'v_skin')">
+          <span class="slider-value" id="v_skin">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Notas sobre piel</label>
+        <textarea class="field-textarea" id="f_skinNotes" placeholder="Textura, granos, luminosidad..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- HÁBITOS -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--teal)"></div>
+      <div class="form-section-title">Hábitos del día</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Ejercicio físico (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_exercise" min="0" max="10" value="0" oninput="updateSlider(this,'v_exercise')">
+          <span class="slider-value" id="v_exercise">0</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Tipo de ejercicio</label>
+        <div class="pills-row" id="f_exerciseType">
+          <button class="pill" data-val="ninguno">Ninguno</button>
+          <button class="pill" data-val="caminar">🚶 Caminar</button>
+          <button class="pill" data-val="yoga">🧘 Yoga</button>
+          <button class="pill" data-val="fuerza">💪 Fuerza</button>
+          <button class="pill" data-val="cardio">🏃 Cardio</button>
+          <button class="pill" data-val="pilates">🤸 Pilates</button>
+          <button class="pill" data-val="natacion">🏊 Natación</button>
+          <button class="pill" data-val="otro">Otro</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Alimentación (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_food" min="1" max="10" value="5" oninput="updateSlider(this,'v_food')">
+          <span class="slider-value" id="v_food">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Notas de alimentación</label>
+        <textarea class="field-textarea" id="f_foodNotes" placeholder="Qué comiste, cómo te sentaste con la comida..."></textarea>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Hidratación (vasos de agua aprox.)</label>
+        <input type="number" class="field-input" id="f_water" min="0" max="20" placeholder="ej. 8">
+      </div>
+      <div class="field-row">
+        <label class="field-label">Libido / deseo (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_libido" min="1" max="10" value="5" oninput="updateSlider(this,'v_libido')">
+          <span class="slider-value" id="v_libido">5</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRABAJO -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--gold)"></div>
+      <div class="form-section-title">Trabajo y productividad</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Productividad (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_productivity" min="1" max="10" value="5" oninput="updateSlider(this,'v_productivity')">
+          <span class="slider-value" id="v_productivity">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">En qué he trabajado y cómo ha ido</label>
+        <textarea class="field-textarea" id="f_workNotes" placeholder="Proyectos, tareas, cómo me ha ido..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFLEXIÓN -->
+  <div class="form-section">
+    <div class="form-section-header">
+      <div class="section-dot" style="background:var(--rose)"></div>
+      <div class="form-section-title">Reflexión del día</div>
+    </div>
+    <div class="form-section-body">
+      <div class="field-row">
+        <label class="field-label">Felicidad general del día (1-10)</label>
+        <div class="slider-row">
+          <input type="range" class="slider-track" id="f_happiness" min="1" max="10" value="5" oninput="updateSlider(this,'v_happiness')">
+          <span class="slider-value" id="v_happiness">5</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Qué ha ido realmente bien hoy</label>
+        <textarea class="field-textarea" id="f_wentWell" placeholder="Éxitos, momentos bonitos..."></textarea>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Qué no ha ido bien</label>
+        <textarea class="field-textarea" id="f_wentBad" placeholder="Dificultades, fricciones..."></textarea>
+      </div>
+      <div class="field-row">
+        <label class="field-label">De qué estoy agradecida</label>
+        <textarea class="field-textarea" id="f_gratitude" placeholder="Tres cosas de hoy..."></textarea>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Otras notas</label>
+        <textarea class="field-textarea" id="f_notes" placeholder="Cualquier otra cosa..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM FIELDS RENDER ZONE -->
+  <div id="custom-fields-form"></div>
+
+  <button class="btn-save" onclick="saveEntry()">✦ Guardar entrada ✦</button>
+</div>
+
+<!-- ============== CHART VIEW ============== -->
+<div class="view" id="view-chart">
+  <div class="chart-controls">
+    <div class="control-label">Periodo</div>
+    <div class="period-pills">
+      <button class="period-pill active" onclick="setPeriod('month',this)">Mes</button>
+      <button class="period-pill" onclick="setPeriod('weeksByMonth',this)">Semanas/Mes</button>
+      <button class="period-pill" onclick="setPeriod('year',this)">Año</button>
+      <button class="period-pill" onclick="setPeriod('all',this)">Todo</button>
+    </div>
+    <div class="control-label">Series (toca para activar/desactivar)</div>
+    <div class="series-toggles" id="seriesToggleContainer"></div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="mainChart" height="280"></canvas>
+    <div class="chart-empty" id="chartEmpty" style="display:none">Aún no hay datos. ¡Empieza registrando tu primer día! 🌙</div>
+  </div>
+</div>
+
+<!-- ============== TABLE VIEW ============== -->
+<div class="view" id="view-table">
+  <div class="chart-controls" style="margin-bottom:16px">
+    <div class="control-label">Periodo</div>
+    <div class="period-pills">
+      <button class="period-pill active" onclick="setTablePeriod('month',this)">Mes</button>
+      <button class="period-pill" onclick="setTablePeriod('year',this)">Año</button>
+      <button class="period-pill" onclick="setTablePeriod('all',this)">Todo</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table id="dataTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+      <div class="table-empty" id="tableEmpty" style="display:none">Aún no hay entradas registradas 🌿</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== SETTINGS VIEW ============== -->
+<div class="view" id="view-settings">
+  <div class="install-box" style="margin-bottom:16px">
+    <strong>📱 Guardar en iPhone</strong>
+    Abre este archivo en Safari → pulsa el botón <em>Compartir</em> → <em>"Añadir a pantalla de inicio"</em>. Quedará como una app en tu inicio.
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">Añadir campo personalizado</div>
+    <p style="font-size:12px;color:var(--taupe);margin-bottom:10px">Puedes añadir nuevas categorías de seguimiento en cualquier momento.</p>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input type="text" id="newFieldName" placeholder="Nombre del campo" style="flex:1;border:1px solid var(--sand);border-radius:8px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--cream);outline:none">
+      <select id="newFieldType" style="border:1px solid var(--sand);border-radius:8px;padding:8px;background:var(--cream);font-size:12px;color:var(--deep);outline:none">
+        <option value="slider">1-10</option>
+        <option value="text">Texto</option>
+        <option value="number">Número</option>
+      </select>
+    </div>
+    <button class="btn-sm" onclick="addCustomField()">+ Añadir</button>
+    <div class="custom-fields-list" id="customFieldsList"></div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">Exportar datos</div>
+    <button class="export-btn" onclick="exportCSV()">⬇ Descargar CSV</button>
+    <button class="export-btn" onclick="exportJSON()">⬇ Descargar JSON</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-title">Datos</div>
+    <p style="font-size:12px;color:var(--taupe);margin-bottom:10px">Tienes <strong id="entryCount">0</strong> entradas guardadas en este dispositivo.</p>
+    <button class="export-btn" style="border-color:var(--coral);color:var(--coral)" onclick="clearAllData()">⚠ Borrar todos los datos</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Entrada guardada</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ============ DATA LAYER ============
+const STORAGE_KEY = 'ciclo_tracker_v1';
+const FIELDS_KEY  = 'ciclo_custom_fields_v1';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadCustomFields() {
+  try { return JSON.parse(localStorage.getItem(FIELDS_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveCustomFields(fields) {
+  localStorage.setItem(FIELDS_KEY, JSON.stringify(fields));
+}
+
+// ============ SERIES CONFIG ============
+const SERIES = [
+  { key:'energy',      label:'Energía',       color:'#c8a84b' },
+  { key:'sleep',       label:'Sueño',          color:'#b8b0c8' },
+  { key:'emotion',     label:'Emoción',        color:'#e8c4b0' },
+  { key:'body',        label:'Cuerpo',         color:'#8fa68c' },
+  { key:'skin',        label:'Piel',           color:'#d4967a' },
+  { key:'exercise',    label:'Ejercicio',      color:'#6a9ea8' },
+  { key:'food',        label:'Comida',         color:'#a8c870' },
+  { key:'libido',      label:'Libido',         color:'#d4806a' },
+  { key:'productivity',label:'Productividad',  color:'#8ab0c0' },
+  { key:'happiness',   label:'Felicidad',      color:'#c4b49a' },
+];
+
+let activeSeries = new Set(SERIES.map(s=>s.key));
+let chartPeriod = 'month';
+let tablePeriod = 'month';
+let chartInstance = null;
+
+// ============ NAVIGATION ============
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if(name==='chart') renderChart();
+  if(name==='table') renderTable();
+  if(name==='settings') renderSettings();
+}
+
+// ============ FORM HELPERS ============
+function updateSlider(el, valId) {
+  document.getElementById(valId).textContent = el.value;
+}
+
+function initPills() {
+  document.querySelectorAll('.pills-row').forEach(row => {
+    row.querySelectorAll('.pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        // Multi-select for most, single for some
+        if(row.dataset.single==='true') {
+          row.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+        }
+        pill.classList.toggle('selected');
+      });
+    });
+  });
+  // Single-select groups
+  ['f_cyclePhase','f_moonPhase','f_flow'].forEach(id=>{
+    const row = document.getElementById(id);
+    if(row) {
+      row.dataset.single='true';
+      row.querySelectorAll('.pill').forEach(p=>{
+        p.addEventListener('click',()=>{
+          row.querySelectorAll('.pill').forEach(q=>q.classList.remove('selected'));
+          p.classList.add('selected');
+        });
+      });
+    }
+  });
+}
+
+function getPillValue(groupId) {
+  const row = document.getElementById(groupId);
+  if(!row) return '';
+  const selected = row.querySelectorAll('.pill.selected');
+  return Array.from(selected).map(p=>p.dataset.val).join(', ');
+}
+
+function initDateField() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  document.getElementById('entryDate').value = `${yyyy}-${mm}-${dd}`;
+}
+
+// ============ SAVE ENTRY ============
+function saveEntry() {
+  const data = loadData();
+  const dateVal = document.getElementById('entryDate').value;
+  if(!dateVal) { alert('Selecciona una fecha'); return; }
+
+  // Remove existing entry for same date
+  const idx = data.findIndex(e=>e.date===dateVal);
+
+  const entry = {
+    date: dateVal,
+    cycleDayNum:  document.getElementById('f_cycleDayNum').value,
+    cyclePhase:   getPillValue('f_cyclePhase'),
+    flow:         getPillValue('f_flow'),
+    moonPhase:    getPillValue('f_moonPhase'),
+    energy:       +document.getElementById('f_energy').value,
+    sleep:        +document.getElementById('f_sleep').value,
+    sleepHours:   document.getElementById('f_sleepHours').value,
+    sleepNotes:   document.getElementById('f_sleepNotes').value,
+    emotion:      +document.getElementById('f_emotion').value,
+    emotionTags:  getPillValue('f_emotionTags'),
+    emotionNotes: document.getElementById('f_emotionNotes').value,
+    body:         +document.getElementById('f_body').value,
+    symptoms:     getPillValue('f_symptoms'),
+    skin:         +document.getElementById('f_skin').value,
+    skinNotes:    document.getElementById('f_skinNotes').value,
+    exercise:     +document.getElementById('f_exercise').value,
+    exerciseType: getPillValue('f_exerciseType'),
+    food:         +document.getElementById('f_food').value,
+    foodNotes:    document.getElementById('f_foodNotes').value,
+    water:        document.getElementById('f_water').value,
+    libido:       +document.getElementById('f_libido').value,
+    productivity: +document.getElementById('f_productivity').value,
+    workNotes:    document.getElementById('f_workNotes').value,
+    happiness:    +document.getElementById('f_happiness').value,
+    wentWell:     document.getElementById('f_wentWell').value,
+    wentBad:      document.getElementById('f_wentBad').value,
+    gratitude:    document.getElementById('f_gratitude').value,
+    notes:        document.getElementById('f_notes').value,
+  };
+
+  // Custom fields
+  const customFields = loadCustomFields();
+  customFields.forEach(cf => {
+    const el = document.getElementById('cf_'+cf.id);
+    if(el) entry['cf_'+cf.id] = el.value;
+  });
+
+  if(idx>=0) data[idx]=entry; else data.push(entry);
+  data.sort((a,b)=>a.date.localeCompare(b.date));
+  saveData(data);
+  showToast('✓ Entrada guardada para el ' + formatDate(dateVal));
+  document.getElementById('entryCount').textContent = data.length;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function formatDate(d) {
+  const [y,m,day] = d.split('-');
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${+day} ${months[+m-1]} ${y}`;
+}
+
+// ============ CHART ============
+function setPeriod(p, el) {
+  chartPeriod = p;
+  document.querySelectorAll('#view-chart .period-pill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderChart();
+}
+
+function buildSeriesToggles() {
+  const container = document.getElementById('seriesToggleContainer');
+  container.innerHTML = '';
+  const allSeries = [...SERIES, ...loadCustomFields().filter(cf=>cf.type==='slider').map(cf=>({
+    key:'cf_'+cf.id, label:cf.name, color:'#9a8a7a'
+  }))];
+  allSeries.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'series-toggle' + (activeSeries.has(s.key)?'':' off');
+    btn.style.borderColor = s.color;
+    btn.style.color = s.color;
+    btn.innerHTML = `<span class="dot" style="background:${s.color}"></span>${s.label}`;
+    btn.onclick = () => {
+      if(activeSeries.has(s.key)) activeSeries.delete(s.key);
+      else activeSeries.add(s.key);
+      btn.classList.toggle('off');
+      renderChart();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function getFilteredData() {
+  const data = loadData();
+  const now = new Date();
+  if(chartPeriod==='month') {
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    return data.filter(e=>e.date.startsWith(ym));
+  }
+  if(chartPeriod==='weeksByMonth') {
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    return data.filter(e=>e.date.startsWith(ym));
+  }
+  if(chartPeriod==='year') {
+    return data.filter(e=>e.date.startsWith(String(now.getFullYear())));
+  }
+  return data;
+}
+
+function aggregateByWeek(data) {
+  const weeks = {};
+  data.forEach(e => {
+    const d = new Date(e.date+'T00:00:00');
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day===0?-6:1);
+    const monday = new Date(d);
+    monday.setDate(diff);
+    const wk = monday.toISOString().slice(0,10);
+    if(!weeks[wk]) weeks[wk] = {date:wk, count:0, _sums:{}};
+    weeks[wk].count++;
+    SERIES.forEach(s=>{
+      if(!weeks[wk]._sums[s.key]) weeks[wk]._sums[s.key]=0;
+      weeks[wk]._sums[s.key] += (e[s.key]||0);
+    });
+  });
+  return Object.values(weeks).sort((a,b)=>a.date.localeCompare(b.date)).map(w=>{
+    const avg = {date:w.date};
+    SERIES.forEach(s=>{ avg[s.key] = +(w._sums[s.key]/w.count).toFixed(1); });
+    return avg;
+  });
+}
+
+function aggregateByMonth(data) {
+  const months = {};
+  data.forEach(e => {
+    const ym = e.date.slice(0,7);
+    if(!months[ym]) months[ym] = {date:ym, count:0, _sums:{}};
+    months[ym].count++;
+    SERIES.forEach(s=>{
+      if(!months[ym]._sums[s.key]) months[ym]._sums[s.key]=0;
+      months[ym]._sums[s.key] += (e[s.key]||0);
+    });
+  });
+  return Object.values(months).sort((a,b)=>a.date.localeCompare(b.date)).map(m=>{
+    const avg = {date:m.date};
+    SERIES.forEach(s=>{ avg[s.key] = +(m._sums[s.key]/m.count).toFixed(1); });
+    return avg;
+  });
+}
+
+function renderChart() {
+  buildSeriesToggles();
+  let rawData = getFilteredData();
+  let plotData = rawData;
+  let labels;
+
+  if(chartPeriod==='weeksByMonth') {
+    plotData = aggregateByWeek(rawData);
+    labels = plotData.map(e=>'Sem '+e.date.slice(8,10));
+  } else if(chartPeriod==='year') {
+    plotData = aggregateByMonth(rawData);
+    const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    labels = plotData.map(e=>monthNames[+e.date.slice(5,7)-1]+' '+e.date.slice(2,4));
+  } else {
+    labels = plotData.map(e=>e.date.slice(8));
+  }
+
+  const empty = document.getElementById('chartEmpty');
+  const canvas = document.getElementById('mainChart');
+
+  if(plotData.length===0) {
+    canvas.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  canvas.style.display='block';
+  empty.style.display='none';
+
+  const allSeries = [...SERIES, ...loadCustomFields().filter(cf=>cf.type==='slider').map(cf=>({
+    key:'cf_'+cf.id, label:cf.name, color:'#9a8a7a'
+  }))];
+
+  const datasets = allSeries.filter(s=>activeSeries.has(s.key)).map(s=>({
+    label: s.label,
+    data: plotData.map(e=>e[s.key]||null),
+    borderColor: s.color,
+    backgroundColor: s.color+'22',
+    borderWidth: 2,
+    pointRadius: plotData.length>30?1:3,
+    pointHoverRadius: 5,
+    tension: 0.4,
+    fill: false,
+    spanGaps: true,
+  }));
+
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          backgroundColor: '#2d2318',
+          titleColor: '#f5f0e8',
+          bodyColor: '#c4b49a',
+          padding: 10,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color:'#8b7355', font:{size:10}, maxRotation:45 },
+          grid: { color:'rgba(196,180,154,0.2)' }
+        },
+        y: {
+          min:0, max:10,
+          ticks: { color:'#8b7355', font:{size:10}, stepSize:2 },
+          grid: { color:'rgba(196,180,154,0.2)' }
+        }
+      }
+    }
+  });
+  canvas.parentElement.style.height = '280px';
+}
+
+// ============ TABLE ============
+function setTablePeriod(p, el) {
+  tablePeriod = p;
+  document.querySelectorAll('#view-table .period-pill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  let data = loadData();
+  const now = new Date();
+  if(tablePeriod==='month') {
+    const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    data = data.filter(e=>e.date.startsWith(ym));
+  } else if(tablePeriod==='year') {
+    data = data.filter(e=>e.date.startsWith(String(now.getFullYear())));
+  }
+  data = [...data].reverse();
+
+  const empty = document.getElementById('tableEmpty');
+  const table = document.getElementById('dataTable');
+
+  if(data.length===0) {
+    table.style.display='none'; empty.style.display='block'; return;
+  }
+  table.style.display=''; empty.style.display='none';
+
+  const cols = ['Fecha','Fase','Flujo','Luna','Energía','Sueño','Emoción','Cuerpo','Piel','Ejercicio','Comida','Libido','Prod.','Felicidad','Síntomas'];
+  const keys = ['date','cyclePhase','flow','moonPhase','energy','sleep','emotion','body','skin','exercise','food','libido','productivity','happiness','symptoms'];
+
+  table.querySelector('thead').innerHTML = `<tr>${cols.map(c=>`<th>${c}</th>`).join('')}<th></th></tr>`;
+  table.querySelector('tbody').innerHTML = data.map(e=>`
+    <tr>
+      ${keys.map(k=>`<td title="${e[k]||''}">${k==='date'?formatDate(e[k]):(e[k]||'—')}</td>`).join('')}
+      <td><button class="btn-del" onclick="deleteEntry('${e.date}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function deleteEntry(date) {
+  if(!confirm('¿Borrar la entrada del ' + formatDate(date) + '?')) return;
+  let data = loadData().filter(e=>e.date!==date);
+  saveData(data);
+  renderTable();
+  document.getElementById('entryCount').textContent = data.length;
+}
+
+// ============ SETTINGS ============
+function renderSettings() {
+  document.getElementById('entryCount').textContent = loadData().length;
+  renderCustomFieldsList();
+  renderCustomFieldsForm();
+}
+
+function renderCustomFieldsList() {
+  const fields = loadCustomFields();
+  const container = document.getElementById('customFieldsList');
+  if(fields.length===0) { container.innerHTML='<p style="font-size:12px;color:var(--taupe)">No hay campos personalizados aún.</p>'; return; }
+  container.innerHTML = fields.map(f=>`
+    <div class="custom-field-item">
+      <span>${f.name} <span style="color:var(--taupe);font-size:11px">(${f.type==='slider'?'1-10':f.type})</span></span>
+      <button class="btn-sm danger" style="font-size:11px;padding:4px 8px" onclick="removeCustomField('${f.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function renderCustomFieldsForm() {
+  const fields = loadCustomFields();
+  const container = document.getElementById('custom-fields-form');
+  if(fields.length===0) { container.innerHTML=''; return; }
+  container.innerHTML = `
+    <div class="form-section">
+      <div class="form-section-header">
+        <div class="section-dot" style="background:var(--taupe)"></div>
+        <div class="form-section-title">Mis campos personalizados</div>
+      </div>
+      <div class="form-section-body">
+        ${fields.map(f=>`
+          <div class="field-row">
+            <label class="field-label">${f.name}</label>
+            ${f.type==='slider'
+              ? `<div class="slider-row"><input type="range" class="slider-track" id="cf_${f.id}" min="1" max="10" value="5" oninput="updateSlider(this,'vcf_${f.id}')"><span class="slider-value" id="vcf_${f.id}">5</span></div>`
+              : f.type==='number'
+              ? `<input type="number" class="field-input" id="cf_${f.id}" placeholder="Número">`
+              : `<textarea class="field-textarea" id="cf_${f.id}" placeholder="${f.name}..."></textarea>`
+            }
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function addCustomField() {
+  const name = document.getElementById('newFieldName').value.trim();
+  const type = document.getElementById('newFieldType').value;
+  if(!name) { alert('Escribe un nombre para el campo'); return; }
+  const fields = loadCustomFields();
+  const id = Date.now().toString(36);
+  fields.push({ id, name, type });
+  saveCustomFields(fields);
+  document.getElementById('newFieldName').value='';
+  renderCustomFieldsList();
+  renderCustomFieldsForm();
+  buildSeriesToggles();
+  showToast('Campo "'+name+'" añadido ✓');
+}
+
+function removeCustomField(id) {
+  if(!confirm('¿Eliminar este campo?')) return;
+  const fields = loadCustomFields().filter(f=>f.id!==id);
+  saveCustomFields(fields);
+  renderCustomFieldsList();
+  renderCustomFieldsForm();
+  buildSeriesToggles();
+}
+
+// ============ EXPORT ============
+function exportCSV() {
+  const data = loadData();
+  if(!data.length){alert('No hay datos');return;}
+  const keys = Object.keys(data[0]);
+  const csv = [keys.join(','), ...data.map(e=>keys.map(k=>JSON.stringify(e[k]||'')).join(','))].join('\n');
+  download('ciclo-tracker.csv','data:text/csv;charset=utf-8,'+encodeURIComponent(csv));
+}
+
+function exportJSON() {
+  const data = loadData();
+  if(!data.length){alert('No hay datos');return;}
+  download('ciclo-tracker.json','data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2)));
+}
+
+function download(filename, href) {
+  const a = document.createElement('a');
+  a.href = href; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function clearAllData() {
+  if(!confirm('¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) return;
+  if(!confirm('¿Segura? Se perderán todas las entradas.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('entryCount').textContent = '0';
+  showToast('Datos borrados');
+}
+
+// ============ INIT ============
+initPills();
+initDateField();
+renderCustomFieldsForm();
+document.getElementById('entryCount').textContent = loadData().length;
+</script>
+</body>
+</html>
