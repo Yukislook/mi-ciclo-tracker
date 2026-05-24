@@ -614,8 +614,12 @@
     </div>
     <div class="form-section-body">
       <div class="field-row">
-        <label class="field-label">Día del ciclo (nº)</label>
-        <input type="number" class="field-input" id="f_cycleDayNum" min="1" max="45" placeholder="ej. 14">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label class="field-label" style="margin-bottom:0">Día del ciclo (nº)</label>
+          <button onclick="markDayOne()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1.5px solid var(--rose);background:transparent;color:var(--rose);cursor:pointer;font-family:'DM Sans',sans-serif">🩸 Marcar como Día 1</button>
+        </div>
+        <input type="number" class="field-input" id="f_cycleDayNum" min="1" max="60" placeholder="Se calcula automáticamente">
+        <div id="cycleHint" style="font-size:11px;color:var(--taupe);margin-top:4px"></div>
       </div>
       <div class="field-row">
         <label class="field-label">Fase del ciclo</label>
@@ -625,12 +629,15 @@
           <button class="pill" data-val="ovulacion">🌸 Ovulación</button>
           <button class="pill" data-val="lutea">🍂 Lútea</button>
         </div>
+        <div id="cyclePhaseHint" style="font-size:11px;color:var(--taupe);margin-top:4px"></div>
       </div>
       <div class="field-row">
         <label class="field-label">Flujo</label>
         <div class="pills-row" id="f_flow">
           <button class="pill" data-val="sin_flujo">Sin flujo</button>
-          <button class="pill" data-val="manchado">Manchado</button>
+          <button class="pill" data-val="manchado_transparente">Manchado transp.</button>
+          <button class="pill" data-val="manchado_blanco">Manchado blanco</button>
+          <button class="pill" data-val="manchado_marron">Manchado marrón</button>
           <button class="pill" data-val="ligero">Ligero</button>
           <button class="pill" data-val="moderado">Moderado</button>
           <button class="pill" data-val="abundante">Abundante</button>
@@ -646,6 +653,7 @@
       <div class="form-section-title">Fase lunar</div>
     </div>
     <div class="form-section-body">
+      <div id="moonAutoHint" style="font-size:12px;color:var(--mocha);margin-bottom:8px;padding:8px 10px;background:var(--moon-light);border-radius:8px;display:none"></div>
       <div class="pills-row" id="f_moonPhase">
         <button class="pill" data-val="nueva">🌑 Nueva</button>
         <button class="pill" data-val="creciente">🌒 Creciente</button>
@@ -1441,11 +1449,136 @@ function clearAllData() {
   showToast('Datos borrados');
 }
 
-// ============ INIT ============
+// ============ CYCLE & MOON AUTOMATION ============
+const CYCLE_KEY = 'ciclo_day1_v1';
+
+function saveDayOne(dateStr) {
+  localStorage.setItem(CYCLE_KEY, dateStr);
+}
+
+function loadDayOne() {
+  return localStorage.getItem(CYCLE_KEY) || null;
+}
+
+function markDayOne() {
+  const dateVal = document.getElementById('entryDate').value;
+  if(!dateVal) { alert('Selecciona primero la fecha'); return; }
+  saveDayOne(dateVal);
+  document.getElementById('f_cycleDayNum').value = 1;
+  // Select menstrual phase
+  const phaseRow = document.getElementById('f_cyclePhase');
+  phaseRow.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+  phaseRow.querySelector('[data-val="menstrual"]').classList.add('selected');
+  updateCycleHints(dateVal);
+  showToast('🩸 Día 1 marcado para ' + formatDate(dateVal));
+}
+
+function calcCycleDay(fromDateStr, toDateStr) {
+  const from = new Date(fromDateStr + 'T00:00:00');
+  const to   = new Date(toDateStr   + 'T00:00:00');
+  const diff = Math.round((to - from) / 86400000) + 1;
+  return diff > 0 ? diff : null;
+}
+
+function getCyclePhase(dayNum) {
+  if(dayNum <= 5)  return { val:'menstrual',  label:'🩸 Menstrual (días 1-5)' };
+  if(dayNum <= 13) return { val:'folicula',   label:'🌱 Folicular (días 6-13)' };
+  if(dayNum === 14) return { val:'ovulacion', label:'🌸 Ovulación (día 14)' };
+  return { val:'lutea', label:'🍂 Lútea (días 15-28+)' };
+}
+
+function updateCycleHints(dateVal) {
+  const day1 = loadDayOne();
+  const hintEl = document.getElementById('cycleHint');
+  const phaseHintEl = document.getElementById('cyclePhaseHint');
+  const cycleInput = document.getElementById('f_cycleDayNum');
+
+  if(!day1) {
+    hintEl.textContent = 'Pulsa "Marcar como Día 1" cuando empiece tu regla.';
+    return;
+  }
+
+  const dayNum = calcCycleDay(day1, dateVal);
+  if(!dayNum) {
+    hintEl.textContent = 'La fecha es anterior al Día 1 guardado.';
+    return;
+  }
+
+  // Only autofill if field is empty
+  if(!cycleInput.value) cycleInput.value = dayNum;
+
+  const phase = getCyclePhase(dayNum);
+  hintEl.textContent = `Calculado desde el ${formatDate(day1)} · puedes editarlo`;
+
+  // Autoselect phase only if nothing selected
+  const phaseRow = document.getElementById('f_cyclePhase');
+  const hasSelected = phaseRow.querySelector('.pill.selected');
+  if(!hasSelected) {
+    phaseRow.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+    const target = phaseRow.querySelector(`[data-val="${phase.val}"]`);
+    if(target) target.classList.add('selected');
+  }
+  phaseHintEl.textContent = 'Sugerida: ' + phase.label + ' · toca para cambiar';
+}
+
+// Moon phase calculation (astronomical formula)
+function calcMoonPhase(dateStr) {
+  const date = new Date(dateStr + 'T12:00:00');
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  // Conway's algorithm adapted
+  let r = year % 100;
+  r %= 19;
+  if(r > 9) r -= 19;
+  r = ((r * 11) % 30) + month + day;
+  if(month < 3) r += 2;
+  r -= (year < 2000) ? 4 : 8.3;
+  r = Math.floor(r + 0.5) % 30;
+  if(r < 0) r += 30;
+
+  // r = 0 → new moon, 15 → full moon
+  if(r === 0)              return { val:'nueva',             emoji:'🌑', label:'Luna Nueva' };
+  if(r >= 1  && r <= 6)   return { val:'creciente',          emoji:'🌒', label:'Luna Creciente' };
+  if(r >= 7  && r <= 8)   return { val:'cuarto_creciente',   emoji:'🌓', label:'Cuarto Creciente' };
+  if(r >= 9  && r <= 13)  return { val:'gibosa_creciente',   emoji:'🌔', label:'Gibosa Creciente' };
+  if(r >= 14 && r <= 16)  return { val:'llena',              emoji:'🌕', label:'Luna Llena' };
+  if(r >= 17 && r <= 21)  return { val:'gibosa_menguante',   emoji:'🌖', label:'Gibosa Menguante' };
+  if(r >= 22 && r <= 23)  return { val:'cuarto_menguante',   emoji:'🌗', label:'Cuarto Menguante' };
+  return                         { val:'menguante',           emoji:'🌘', label:'Luna Menguante' };
+}
+
+function updateMoonPhase(dateVal) {
+  if(!dateVal) return;
+  const moon = calcMoonPhase(dateVal);
+  const moonRow = document.getElementById('f_moonPhase');
+  const hintEl  = document.getElementById('moonAutoHint');
+
+  // Only autoselect if nothing selected
+  const hasSelected = moonRow.querySelector('.pill.selected');
+  if(!hasSelected) {
+    moonRow.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+    const target = moonRow.querySelector(`[data-val="${moon.val}"]`);
+    if(target) target.classList.add('selected');
+  }
+  hintEl.style.display = 'block';
+  hintEl.textContent = moon.emoji + ' ' + moon.label + ' calculada para esta fecha · toca para cambiar';
+}
+
+// Hook date change
+document.getElementById('entryDate').addEventListener('change', function() {
+  updateCycleHints(this.value);
+  updateMoonPhase(this.value);
+});
+
+
 initPills();
 initDateField();
 renderCustomFieldsForm();
 document.getElementById('entryCount').textContent = loadData().length;
+const _initDate = document.getElementById('entryDate').value;
+if(_initDate) { updateCycleHints(_initDate); updateMoonPhase(_initDate); }
 </script>
 </body>
 </html>
