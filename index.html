@@ -1504,20 +1504,17 @@ function updateCycleHints(dateVal) {
     return;
   }
 
-  // Only autofill if field is empty
-  if(!cycleInput.value) cycleInput.value = dayNum;
+  // Always autofill calculated day (user can edit after)
+  cycleInput.value = dayNum;
 
   const phase = getCyclePhase(dayNum);
-  hintEl.textContent = `Calculado desde el ${formatDate(day1)} · puedes editarlo`;
+  hintEl.textContent = `Día ${dayNum} · calculado desde el ${formatDate(day1)} · puedes editarlo`;
 
-  // Autoselect phase only if nothing selected
+  // Autoselect phase
   const phaseRow = document.getElementById('f_cyclePhase');
-  const hasSelected = phaseRow.querySelector('.pill.selected');
-  if(!hasSelected) {
-    phaseRow.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
-    const target = phaseRow.querySelector(`[data-val="${phase.val}"]`);
-    if(target) target.classList.add('selected');
-  }
+  phaseRow.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected'));
+  const target = phaseRow.querySelector(`[data-val="${phase.val}"]`);
+  if(target) target.classList.add('selected');
   phaseHintEl.textContent = 'Sugerida: ' + phase.label + ' · toca para cambiar';
 }
 
