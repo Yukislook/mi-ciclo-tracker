@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mi Ciclo">
 <title>Mi Ciclo · Tracker</title>
@@ -29,7 +30,9 @@
     --teal: #6a9ea8;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+
+  input, textarea, select { cursor: text; }
 
   body {
     font-family: 'DM Sans', sans-serif;
@@ -591,10 +594,10 @@
 </div>
 
 <div class="nav-tabs">
-  <button class="nav-tab active" onclick="showView('form')">Registrar</button>
-  <button class="nav-tab" onclick="showView('chart')">Gráficas</button>
-  <button class="nav-tab" onclick="showView('table')">Tabla</button>
-  <button class="nav-tab" onclick="showView('settings')">Ajustes</button>
+  <button class="nav-tab active" onclick="showView('form',this)">Registrar</button>
+  <button class="nav-tab" onclick="showView('chart',this)">Gráficas</button>
+  <button class="nav-tab" onclick="showView('table',this)">Tabla</button>
+  <button class="nav-tab" onclick="showView('settings',this)">Ajustes</button>
 </div>
 
 <!-- ============== FORM VIEW ============== -->
@@ -1019,11 +1022,11 @@ let tablePeriod = 'month';
 let chartInstance = null;
 
 // ============ NAVIGATION ============
-function showView(name) {
+function showView(name, el) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
-  event.target.classList.add('active');
+  if(el) el.classList.add('active');
   if(name==='chart') renderChart();
   if(name==='table') renderTable();
   if(name==='settings') renderSettings();
