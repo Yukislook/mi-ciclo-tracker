@@ -961,6 +961,8 @@
   </div>
 
 
+  <div class="settings-section">
+    <div class="settings-title">Exportar datos</div>
     <button class="export-btn" onclick="exportCSV()">⬇ Descargar CSV</button>
     <button class="export-btn" onclick="exportJSON()">⬇ Descargar JSON</button>
   </div>
@@ -1460,6 +1462,7 @@ function importJSON(input) {
 }
 
 
+function exportCSV() {
   const data = loadData();
   if(!data.length){alert('No hay datos');return;}
   const keys = Object.keys(data[0]);
